@@ -746,9 +746,11 @@ func TestTokenAuthenticatorAuthenticateExtToken(t *testing.T) {
 	secrets := fake.NewMockControllerInterface[*corev1.Secret, *corev1.SecretList](ctrl)
 	scache := fake.NewMockCacheInterface[*corev1.Secret](ctrl)
 	users := fake.NewMockNonNamespacedControllerInterface[*apiv3.User, *apiv3.UserList](ctrl)
+	spaces := fake.NewMockNonNamespacedControllerInterface[*corev1.Namespace, *corev1.NamespaceList](ctrl)
 
 	users.EXPECT().Cache().Return(nil).AnyTimes()
 	secrets.EXPECT().Cache().Return(scache)
+	spaces.EXPECT().Cache().Return(nil)
 
 	scache.EXPECT().
 		Get("cattle-tokens", token.Name).
@@ -760,7 +762,7 @@ func TestTokenAuthenticatorAuthenticateExtToken(t *testing.T) {
 			return nil, nil
 		}).AnyTimes()
 
-	store := exttokenstore.NewSystem(nil, secrets, users, nil, nil, nil, nil)
+	store := exttokenstore.NewSystem(spaces, secrets, users, nil, nil, nil, nil)
 
 	authenticator := tokenAuthenticator{
 		ctx:                 context.Background(),
@@ -859,7 +861,11 @@ func TestTokenAuthenticatorAuthenticateExtToken(t *testing.T) {
 			AnyTimes()
 		newSecrets.EXPECT().Patch("cattle-tokens", token.Name, k8stypes.JSONPatchType, gomock.Any()).
 			Return(nil, fmt.Errorf("some error")).Times(1)
-		authenticator.extTokenStore = exttokenstore.NewSystem(nil, newSecrets, users, nil, nil, nil, nil)
+
+		newSpaces := fake.NewMockNonNamespacedControllerInterface[*corev1.Namespace, *corev1.NamespaceList](ctrl)
+		newSpaces.EXPECT().Cache().Return(nil)
+
+		authenticator.extTokenStore = exttokenstore.NewSystem(newSpaces, newSecrets, users, nil, nil, nil, nil)
 
 		tokenSecret.Data["last-used-at"] = []byte(now.
 			Add(-time.Second).
@@ -1006,7 +1012,11 @@ func TestTokenAuthenticatorAuthenticateExtToken(t *testing.T) {
 			Get("cattle-tokens", token.Name).
 			Return(nil, apierrors.NewNotFound(schema.GroupResource{}, token.Name)).
 			Times(1)
-		authenticator.extTokenStore = exttokenstore.NewSystem(nil, newSecrets, users, nil, nil, nil, nil)
+
+		newSpaces := fake.NewMockNonNamespacedControllerInterface[*corev1.Namespace, *corev1.NamespaceList](ctrl)
+		newSpaces.EXPECT().Cache().Return(nil)
+
+		authenticator.extTokenStore = exttokenstore.NewSystem(newSpaces, newSecrets, users, nil, nil, nil, nil)
 
 		userRefresher.reset()
 
@@ -1028,7 +1038,11 @@ func TestTokenAuthenticatorAuthenticateExtToken(t *testing.T) {
 			Get("cattle-tokens", token.Name).
 			Return(nil, fmt.Errorf("some error")).
 			Times(1)
-		authenticator.extTokenStore = exttokenstore.NewSystem(nil, newSecrets, users, nil, nil, nil, nil)
+
+		newSpaces := fake.NewMockNonNamespacedControllerInterface[*corev1.Namespace, *corev1.NamespaceList](ctrl)
+		newSpaces.EXPECT().Cache().Return(nil)
+
+		authenticator.extTokenStore = exttokenstore.NewSystem(newSpaces, newSecrets, users, nil, nil, nil, nil)
 
 		userRefresher.reset()
 

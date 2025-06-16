@@ -512,9 +512,11 @@ func TestRefreshAttributes(t *testing.T) {
 			secrets := fake.NewMockControllerInterface[*corev1.Secret, *corev1.SecretList](ctrl)
 			scache := fake.NewMockCacheInterface[*corev1.Secret](ctrl)
 			users := fake.NewMockNonNamespacedControllerInterface[*v3.User, *v3.UserList](ctrl)
+			spaces := fake.NewMockNonNamespacedControllerInterface[*corev1.Namespace, *corev1.NamespaceList](ctrl)
 
 			users.EXPECT().Cache().Return(nil)
 			secrets.EXPECT().Cache().Return(scache)
+			spaces.EXPECT().Cache().Return(nil)
 
 			// standard capture of delete and update events. See
 			// also the `tokens` interface used by the refresher
@@ -560,7 +562,7 @@ func TestRefreshAttributes(t *testing.T) {
 						return nil, nil
 					},
 				}),
-				extTokenStore: exttokens.NewSystem(nil, secrets, users, nil,
+				extTokenStore: exttokens.NewSystem(spaces, secrets, users, nil,
 					exttokens.NewTimeHandler(),
 					exttokens.NewHashHandler(),
 					exttokens.NewAuthHandler()),

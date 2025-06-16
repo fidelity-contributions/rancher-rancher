@@ -387,9 +387,12 @@ func TestUpdated(t *testing.T) {
 			users := wranglerfake.NewMockNonNamespacedControllerInterface[*v3.User, *v3.UserList](ctrl)
 			users.EXPECT().Cache().Return(nil)
 
+			spaces := wranglerfake.NewMockNonNamespacedControllerInterface[*v1.Namespace, *v1.NamespaceList](ctrl)
+			spaces.EXPECT().Cache().Return(nil)
+
 			timer := exttokens.NewMocktimeHandler(ctrl)
 
-			store := exttokens.NewSystem(nil, secrets, users, nil, timer, nil, nil)
+			store := exttokens.NewSystem(spaces, secrets, users, nil, timer, nil, nil)
 			ul.extTokenStore = store
 
 			tt.mockSetup(secrets, scache, timer)
